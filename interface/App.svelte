@@ -41,7 +41,7 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     color: #424242;
-    background-color: #262626;
+    background-color: #202121;
   }
   .styling {
     width: 5vmin;
@@ -164,7 +164,7 @@
     position: fixed;
     top: 0;
     right: 0;
-    background-color: #4c4a4a;
+    background-color: #484545;
     border-radius: 50px;
     border: 2px solid rgb(222, 221, 221);
   }
