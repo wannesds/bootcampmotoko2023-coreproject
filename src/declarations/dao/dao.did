@@ -1,35 +1,37 @@
-type Subaccount = vec nat8;
+type VotersList = 
+ opt record {
+       principal;
+       List;
+     };
+type Status = 
+ variant {
+   Passed;
+   Rejected;
+   Waiting;
+ };
 type Proposal = 
  record {
-   creator: Account;
+   id: nat;
+   noVotes: nat;
    payload: text;
-   status: variant {
-             Open;
-             Passed;
-             Rejected;
-           };
-   timestamp: int;
-   votes: record {
-            nat;
-            nat;
-          };
+   status: Status;
+   userPrincipal: principal;
+   voters: VotersList;
+   yesVotes: nat;
  };
-type Account = 
- record {
-   owner: principal;
-   subaccount: opt Subaccount;
- };
+type List = 
+ opt record {
+       principal;
+       List;
+     };
 service : {
-  get_all_proposals: () -> (vec record {
-                                  int;
-                                  Proposal;
-                                }) query;
-  get_proposal: (int) -> (opt Proposal) query;
+  get_all_proposals: () -> (vec Proposal) query;
+  get_proposal: (nat) -> (opt Proposal) query;
   submit_proposal: (text) -> (variant {
                                 Err: text;
                                 Ok: Proposal;
                               });
-  vote: (int, bool) -> (variant {
+  vote: (nat, bool) -> (variant {
                           Err: text;
                           Ok: record {
                                 nat;

@@ -16,7 +16,8 @@ import Utils "utils";
 //TODO: streamline types and var names, need to make changes in frontend service callers for it
 //TODO: seperate types file
 //TODO: remove unecessary error handling
-
+//TODO: add checks to see that caller is not anonymous
+//TODO: add check to see if caller hasnt voted on related proposal yet
 
 //functions internally might use Prop instead of Proposal for cleaner shorter code
 actor {
@@ -83,11 +84,11 @@ actor {
       status = #Waiting;
     };
 
-    //3 create post
+    //3 create postt
     try {
       await async proposals.put(id, newProposal);
     } catch err {
-      return #Err("Strange, could not create proposal : " # Error.message(err));
+      return #Err("Strange, could not create proposal: " # Error.message(err));
     };
 
     //4 return confirmation 
@@ -154,8 +155,7 @@ actor {
     return propRes;
   };
   
-  public query func get_all_proposals() : async [(Nat, Proposal)] {
-    //get all proposals into a var
-    return []
+  public query func get_all_proposals() : async [Proposal] {
+    return Iter.toArray(proposals.vals());
   };
 };

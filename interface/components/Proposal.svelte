@@ -3,14 +3,14 @@
 </script>
 
 <div class="post-preview">
-  <h2>{post[0]}</h2>
-  <p>{post[1].creator.owner.toString()}</p>
-  <p>Change website text to: {post[1].payload}</p>
-  <p>
-    Yes: {(post[1].votes[0] / BigInt(100000000)).toString()}, No: {(
-      post[1].votes[1] / BigInt(100000000)
+  <h2>{post.payload}</h2>
+  <!-- <p>{post[0].userPrincipal.toString()}</p>
+  <p>Change website text to: {post[0].payload}</p> -->
+  <!-- <p>
+    Yes: {(post[0].votes[0] / BigInt(100000000)).toString()}, No: {(
+      post[0].votes[1] / BigInt(100000000)
     ).toString()}
-  </p>
+  </p> -->
 </div>
 
 <style>
