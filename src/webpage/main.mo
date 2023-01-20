@@ -1,6 +1,6 @@
 import Text "mo:base/Text";
 
-import Http "../types";
+import Http "types";
 
 
 actor {

@@ -1,9 +1,29 @@
+import Nat8 "mo:base/Nat8";
+import HashMap "mo:base/HashMap";
+import Hash "mo:base/Hash";
+import Int "mo:base/Int";
+import Principal "mo:base/Principal";
+
 actor {
-    //My discord is: iri#1598
-    //Feel free to DM me any question.
-    type Proposal = {};// TO DEFINE;
+    type Proposal = {
+        id: Int;
+        userPrincipal: Principal;
+        description: Text;
+        //votes: Nat;
+    };
+
+    var proposals = HashMap.HashMap<Int, Proposal>(1, Int.equal, Hash.hash);
+
+    stable var proposalIdCount : Int = 0;
+
 
     public shared({caller}) func submit_proposal(this_payload : Text) : async {#Ok : Proposal; #Err : Text} {
+
+        let id : Int = proposalIdCount;
+        proposalIdCount += 1;
+
+        proposals.put(id, this_payload, caller????);
+        
         return #Err("Not implemented yet");
     };
 
