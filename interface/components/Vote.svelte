@@ -152,7 +152,7 @@
     cursor: pointer;
   }
 
-  .delete {
+  /* .delete {
     background-color: white;
-  }
+  } */
 </style>
