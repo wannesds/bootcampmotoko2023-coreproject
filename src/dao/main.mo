@@ -59,6 +59,8 @@ actor {
   //var proposals = HashMap.HashMap<Nat, Proposal>(1, Nat.equal, Hash.hash);
   
   stable var proposalIdCount : Nat = 0;
+
+  //not sure yet if i gonna implement to only have 1 proposal present at a time
   stable var nextProposalId : Nat = 0;
 
   public shared({caller}) func submit_proposal(payload: Text) : async {#Ok : Proposal; #Err : Text} {
