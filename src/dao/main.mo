@@ -10,10 +10,17 @@ import List "mo:base/List";
 import Utils "utils";
 
 //TODO: streamline types and var names, need to make changes in frontend service callers for it
+//TODO: seperate types file
 
 
 //functions internally might use Prop instead of Proposal for cleaner shorter code
 actor {
+
+  type Status = {
+		#Waiting;
+		#Passed;
+		#Rejected;
+	};
 
   type Proposal = {
     id: Int;
@@ -22,8 +29,9 @@ actor {
     voters: List.List<Principal>;
     yesVotes: Nat;
     noVotes: Nat;
-    passed: Bool; 
+    status: Status; 
   };
+
 
   var proposals = HashMap.HashMap<Int, Proposal>(1, Int.equal, Hash.hash);
   
@@ -51,7 +59,7 @@ actor {
       voters = List.nil(); //might change into a buffer bcs lists make me not happy
       yesVotes = 0;
       noVotes = 0;
-      passed = false;
+      status = #Waiting;
     };
 
     //3 create post
@@ -93,7 +101,7 @@ actor {
             voters = cProp.voters; //add caller to this list/buffer
             yesVotes = cProp.yesVotes + yes ;
             noVotes = cProp.noVotes + no;
-            passed = cProp.passed;
+            status = cProp.status;
         };
         //I should find out if this or similar is possible, cant remember, would make it easier and less code
         //cProp.yesVotes += 1; and then update the cProp without having to make a new Prop
@@ -105,7 +113,8 @@ actor {
           return #Err("Strange, Could not vote on proposal : " # Error.message(err));
         };
 
-        //7 check if prop can be 'passed' to true, if the case then update prop passed , and call function to send prop data to Webpage.
+        //7 check if prop status can pass OR reject, if passed/rejected then +1 nextProposalId, 
+        //and if passed: send Proposal to Webpage
         
         return #Ok(updatedProp.yesVotes, updatedProp.noVotes);
         
@@ -117,11 +126,11 @@ actor {
     
   };
 
-  public query func get_proposal(id : Int) : async ?Proposal {
+  public query func get_proposal(proposal_id : Int) : async ?Proposal {
     //1. auth
 
     //2. query data
-    let propRes : ?Proposal = proposals.get(id);
+    let propRes : ?Proposal = proposals.get(proposal_id);
 
     //3.return requested proposal
     return propRes;
