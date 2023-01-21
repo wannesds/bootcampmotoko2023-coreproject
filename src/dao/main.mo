@@ -9,15 +9,20 @@ import Text "mo:base/Text";
 import List "mo:base/List";
 import Iter "mo:base/Iter";
 import Buffer "mo:base/Buffer";
-
+import Float "mo:base/Float";
 
 import Utils "utils";
+import Debug "mo:base/Debug";
 
-//TODO: streamline types and var names, need to make changes in frontend service callers for it
-//TODO: seperate types file
-//TODO: remove unecessary error handling
+
 //TODO: add checks to see that caller is not anonymous
 //TODO: add check to see if caller hasnt voted on related proposal yet
+
+//TODO SECONDARY
+//TODO: streamline types and var names, need to make changes in frontend service callers for it
+//TODO: remove/streamline w frontend error handling and group in a result enum
+//TODO: joint yes + no votes in 1 type for cleaner code
+//TODO: seperate types file
 
 //functions internally might use Prop instead of Proposal for cleaner shorter code
 actor {
@@ -40,29 +45,29 @@ actor {
     status: Status; 
   };
 
-  //experimental
+  let webpageCanister : actor { receive_Message : (Text) -> async Nat } = actor ("qaa6y-5yaaa-aaaaa-aaafa-cai"); 
+  let mbtPrincipal = "db3eq-6iaaa-aaaah-abz6a-cai";
+  //TODO: figure out what and how library to import for ICRCTypes (NatLabs or?)
+  //prob have to vessel and setup local ledger stuff, wait for answer Zane
+  //let mbtCanister = actor (mbtPrincipal) : ICRCTypes.TokenInterface;
+
+  //STORES
+  //experimental, doesnt work as intended yet
   func natHash(n : Nat) : Hash.Hash { 
       Text.hash(Nat.toText(n));
   };
 
   stable var stableProposals : [(Nat, Proposal)] = [];
+
   let proposals = HashMap.fromIter<Nat, Proposal>(stableProposals.vals(), Iter.size(stableProposals.vals()), Nat.equal, natHash);
-
-  system func preupgrade() {
-    stableProposals := Iter.toArray(proposals.entries());
-  };
-
-  system func postupgrade() {
-    stableProposals := [];
-  };
+  system func preupgrade() { stableProposals := Iter.toArray(proposals.entries()) };
+  system func postupgrade() { stableProposals := [] };
   
   //var proposals = HashMap.HashMap<Nat, Proposal>(1, Nat.equal, Hash.hash);
   
   stable var proposalIdCount : Nat = 0;
 
-  //not sure yet if i gonna implement to only have 1 proposal present at a time
-  stable var nextProposalId : Nat = 0;
-
+  //FUNCS
   public shared({caller}) func submit_proposal(payload: Text) : async {#Ok : Proposal; #Err : Text} {
     //1 auth
     //check if caller is not anonymous?
@@ -71,7 +76,7 @@ actor {
     //could check description size or word count
     let minimumWords : Nat = 5;
     if (Utils.number_of_words(payload) < minimumWords) {
-      return #Err("You should write atleast 5 words");
+      return #Err("Seriously?, You should write atleast 5 words");
     };
     let id : Nat = proposalIdCount;
     proposalIdCount += 1;
@@ -106,12 +111,16 @@ actor {
     //3 validate existence
     switch (propRes) {
       case (null) {
-        return #Err("Strange, This proposal doesn't exist");
+        return #Err("Strange, this proposal doesn't exist");
         //could be reomved since theres alrdy an error response on frontend, will have to check later
       };
       case (?cProp) {
-        //4 validate if caller hasnt voted yet on this Proposal
+        //4a check if caller hasnt voted yet on this Proposal
 
+        //4b check the balance of caller , must be more than 1
+        //let icrc_canister : = actor ("db3eq-6iaaa-aaaah-abz6a-cai");
+        //let mbtBalance = Float.fromInt(await icrc_canister.icrc1_balance_of({ owner = user; subaccount = null }));
+        
         //5 update the porposal data
         var yes : Nat = 0;
         var no : Nat = 0;
@@ -135,10 +144,11 @@ actor {
         try {
           await async proposals.put(cProp.id, updatedProp);
         } catch err {
-          return #Err("Strange, Could not vote on proposal : " # Error.message(err));
+          return #Err("Strange, could not vote on proposal : " # Error.message(err));
         };
 
-        //7 check if prop status can pass OR reject, if passed/rejected then +1 nextProposalId, 
+
+        //7 check if prop status can pass OR reject,
         //and if passed: send Proposal to Webpage
         
         return #Ok(updatedProp.yesVotes, updatedProp.noVotes);
@@ -147,11 +157,11 @@ actor {
 
   };
 
-  public query func get_proposal(proposal_id : Nat) : async ?Proposal {
+  public query func get_proposal(proposalId : Nat) : async ?Proposal {
     //1. auth
 
     //2. query data
-    let propRes : ?Proposal = proposals.get(proposal_id);
+    let propRes : ?Proposal = proposals.get(proposalId);
 
     //3.return requested proposal
     return propRes;
@@ -159,5 +169,11 @@ actor {
   
   public query func get_all_proposals() : async [Proposal] {
     return Iter.toArray(proposals.vals());
+  };
+
+  //private functions
+  private func send_Message(message : Text) : async Nat {
+    let size = await webpageCanister.receive_Message(message);
+    return size
   };
 };

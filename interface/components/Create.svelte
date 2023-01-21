@@ -2,8 +2,10 @@
   import { daoActor, principal } from "../stores"
   import { get } from "svelte/store"
   import mot from "../assets/mot.png"
-  let choosenproposal = "Input your proposal"
 
+
+
+  let choosenproposal = "Input your proposal"
   let summary
 
   async function create_proposal(summarypayload) {

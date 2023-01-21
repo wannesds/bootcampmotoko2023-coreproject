@@ -1,4 +1,4 @@
-module Http {
+module {
     public type HeaderField = (Text, Text);
 
     public type HttpRequest = {

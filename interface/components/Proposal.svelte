@@ -24,7 +24,7 @@
     color: white;
   }
 
-  p {
+  /* p {
     color: white;
-  }
+  } */
 </style>

@@ -13,6 +13,7 @@
     return res
   }
   let promise =  get_all_proposals()
+
 </script>
 
 {#if $principal}
