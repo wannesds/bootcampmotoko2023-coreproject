@@ -45,6 +45,7 @@ actor {
     status: Status; 
   };
 
+
   let webpageCanister : actor { receive_Message : (Text) -> async Nat } = actor ("qaa6y-5yaaa-aaaaa-aaafa-cai"); 
   let mbtPrincipal = "db3eq-6iaaa-aaaah-abz6a-cai";
   //TODO: figure out what and how library to import for ICRCTypes (NatLabs or?)
@@ -120,13 +121,13 @@ actor {
         //4b check the balance of caller , must be more than 1
         //let icrc_canister : = actor ("db3eq-6iaaa-aaaah-abz6a-cai");
         //let mbtBalance = Float.fromInt(await icrc_canister.icrc1_balance_of({ owner = user; subaccount = null }));
-        
-        //5 update the porposal data
+        let power : Nat = 1;//MBT balane of caller & >= 1 
+        //5 update the porposal data 
         var yes : Nat = 0;
         var no : Nat = 0;
         switch(yes_or_no) {
-          case (true) yes := 1;
-          case (false) no := 1;
+          case (true) yes := power;
+          case (false) no := power;
         };
         let updatedProp : Proposal = {
             id = cProp.id;
@@ -170,6 +171,8 @@ actor {
   public query func get_all_proposals() : async [Proposal] {
     return Iter.toArray(proposals.vals());
   };
+
+
 
   //private functions
   private func send_Message(message : Text) : async Nat {
