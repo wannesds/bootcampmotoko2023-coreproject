@@ -11,6 +11,7 @@ import Iter "mo:base/Iter";
 import Buffer "mo:base/Buffer";
 import Float "mo:base/Float";
 
+
 import Utils "utils";
 import Debug "mo:base/Debug";
 
@@ -26,6 +27,7 @@ import Debug "mo:base/Debug";
 
 //functions internally might use Prop instead of Proposal for cleaner shorter code
 actor {
+  
 
   type Status = {
 		#Waiting;
@@ -45,9 +47,35 @@ actor {
     status: Status; 
   };
 
+  let icrcCanId = "db3eq-6iaaa-aaaah-abz6a-cai";
+  let webpageCanId = "qaa6y-5yaaa-aaaaa-aaafa-cai";
 
-  let webpageCanister : actor { receive_Message : (Text) -> async Nat } = actor ("qaa6y-5yaaa-aaaaa-aaafa-cai"); 
-  let mbtPrincipal = "db3eq-6iaaa-aaaah-abz6a-cai";
+  //(Thanks to Capuzr for helping me out on how it worked)
+  let mbtActor = actor(icrcCanId) : actor {  
+    store : shared ({
+      key : Text;
+      content_type : Text;
+      content_encoding : Text;
+      content : [Nat8];
+      sha256 : ?[Nat8];
+    }) -> async ()
+  };
+
+  // let icrcActor = actor(mbtCanId) : actor { 
+  //   balance_of: () -> async ()
+  // };
+
+  let webpageActor : actor { receive_Message : (Text) -> async Nat } = actor (webpageCanId); 
+  let icrcActor : actor { 
+    balance_of:() -> async ();
+    max_supply:() -> async (Nat);
+  } = actor (icrcCanId);
+
+  public func get_max_supply() : async Nat {
+    let size = await icrcActor.max_supply();
+    return size;
+  };
+  
   //TODO: figure out what and how library to import for ICRCTypes (NatLabs or?)
   //prob have to vessel and setup local ledger stuff, wait for answer Zane
   //let mbtCanister = actor (mbtPrincipal) : ICRCTypes.TokenInterface;
@@ -67,6 +95,17 @@ actor {
   //var proposals = HashMap.HashMap<Nat, Proposal>(1, Nat.equal, Hash.hash);
   
   stable var proposalIdCount : Nat = 0;
+
+  //PRIVATE FUNCS
+  private func send_Message(message : Text) : async Nat {
+    let size = await webpageActor.receive_Message(message);
+    return size
+  };
+
+  // private func balance_of(caller : Principal) : async Nat {
+  //   let size = await icrcActor.balance_of({accounts}: mbtActor, caller);
+  //   return size;
+  // };
 
   //FUNCS
   public shared({caller}) func submit_proposal(payload: Text) : async {#Ok : Proposal; #Err : Text} {
@@ -174,9 +213,5 @@ actor {
 
 
 
-  //private functions
-  private func send_Message(message : Text) : async Nat {
-    let size = await webpageCanister.receive_Message(message);
-    return size
-  };
+ 
 };
