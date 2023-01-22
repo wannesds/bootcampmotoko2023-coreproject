@@ -26,7 +26,7 @@ import Utils "utils";
 actor {
 
   let reqVotes : Typ.VotePower = 100;
-  //let webpageCanId = "qaa6y-5yaaa-aaaaa-aaafa-cai"; //LOCAL
+  //let webpageId = "qaa6y-5yaaa-aaaaa-aaafa-cai"; //LOCAL
   let webpageId : Typ.CanisterPrincipal = "lfanb-tyaaa-aaaap-aayma-cai"; //IC
   let icrcId : Typ.CanisterPrincipal = "db3eq-6iaaa-aaaah-abz6a-cai"; //MBT TOKEN
 
@@ -60,31 +60,30 @@ actor {
   
   stable var passedProposals : Nat = 0;
   stable var proposalIdCount : Nat = 0;
+
   stable var stableProposals : [(Nat, Typ.Proposal)] = [];
 
   let proposals = HashMap.fromIter<Nat, Typ.Proposal>(stableProposals.vals(), Iter.size(stableProposals.vals()), Nat.equal, natHash);
 
   //SYSTEM FUNCTIONS
   system func preupgrade() { 
-    stableProposals := Iter.toArray(proposals.entries()) ;
+    stableProposals := Iter.toArray(proposals.entries());
   };
 
   system func postupgrade() { 
-    stableProposals := [] 
+    stableProposals := [];
   };
   
   //PRIVATE FUNCTIONS
   private func send_Message(message : Text) : async Nat {
     let size = await webpageActor.receive_Message(message);
-    return size
+    return size;
   };
 
   //PUBLIC FUNCTIONS
   public shared({caller}) func submit_proposal(payload: Text) : async {#Ok : Typ.Proposal; #Err : Text} {
     //1 auth
-    if (Principal.isAnonymous(caller)) {
-      return #Err("You can't do this anonymously!");
-    };
+
 
     //2 prepare data
     //could check description size or word count
@@ -118,9 +117,9 @@ actor {
 
   public shared({caller}) func vote(proposal_id : Nat, yes_or_no : Bool) : async {#Ok : (Nat, Nat); #Err : Text} {
     //1 auth
-    if (Principal.isAnonymous(caller)) {
-      return #Err("You can't do this anonymously!");
-    };
+    // if (Principal.isAnonymous(caller)) {
+    //   return #Err("You can't do this anonymously!");
+    // }; //why this doesnt work ugh
 
     //2 query data
     let propRes : ?Typ.Proposal = proposals.get(proposal_id);
@@ -148,7 +147,7 @@ actor {
         //4c check the balance of caller , must be more than 1
         try {
           power := (await get_balance(caller)) / 100000000;
-          assert(1 <= power) //test if assert is needed here or not
+          assert(1 <= power); //test if assert is needed here or not
         } catch err {
           return #Err("You don't have any tokens!");
         };
@@ -159,7 +158,7 @@ actor {
           case (true) yesVotes_ += power;
           case (false) noVotes_ += power;
         };
-        //6 check if prop status can pass OR reject, and deny if the power level is over 9000
+        //6 check if prop status can pass OR reject, also mitigate any power overshoot
         if (yesVotes_ >= reqVotes) { 
           status_ := #Passed;
           yesVotes_ := reqVotes;
@@ -202,7 +201,6 @@ actor {
 
   public query ({caller}) func get_proposal(proposalId : Nat) : async ?Typ.Proposal {
     //1. auth
-    assert(Principal.isAnonymous(caller));
       
     //2. query data
     let propRes : ?Typ.Proposal = proposals.get(proposalId);
@@ -215,7 +213,7 @@ actor {
     return Iter.toArray(proposals.vals());
   };
 
-  public func get_balance(caller : Principal) : async Typ.Balance {
+  public shared func get_balance(caller : Principal) : async Typ.Balance {
     return await icrcActor.icrc1_balance_of({ owner = caller });
   };
 

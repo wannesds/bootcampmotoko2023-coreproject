@@ -33,7 +33,8 @@ export const idlFactory = ({ IDL }) => {
     'status_code' : IDL.Nat16,
   });
   return IDL.Service({
-    'http_request' : IDL.Func([HttpRequest], [HttpResponse], ['query']),
+    'http_Request' : IDL.Func([HttpRequest], [HttpResponse], ['query']),
+    'receive_Message' : IDL.Func([IDL.Text], [IDL.Nat], []),
   });
 };
 export const init = ({ IDL }) => { return []; };

@@ -37,5 +37,6 @@ type HeaderField =
    text;
  };
 service : {
-  http_request: (HttpRequest) -> (HttpResponse) query;
+  http_Request: (HttpRequest) -> (HttpResponse) query;
+  receive_Message: (text) -> (nat);
 }

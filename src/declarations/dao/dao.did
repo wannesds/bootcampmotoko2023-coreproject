@@ -3,6 +3,7 @@ type VotersList =
        principal;
        List;
      };
+type VotePower = nat;
 type Status = 
  variant {
    Passed;
@@ -12,20 +13,22 @@ type Status =
 type Proposal = 
  record {
    id: nat;
-   noVotes: nat;
+   noVotes: VotePower;
    payload: text;
    status: Status;
    userPrincipal: principal;
    voters: VotersList;
-   yesVotes: nat;
+   yesVotes: VotePower;
  };
 type List = 
  opt record {
        principal;
        List;
      };
+type Balance = nat;
 service : {
   get_all_proposals: () -> (vec Proposal) query;
+  get_balance: (principal) -> (Balance);
   get_proposal: (nat) -> (opt Proposal) query;
   submit_proposal: (text) -> (variant {
                                 Err: text;
