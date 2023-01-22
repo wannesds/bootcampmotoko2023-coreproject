@@ -8,7 +8,7 @@
       "main": "./src/dao/main.mo",
       "type": "motoko"
     },
-    "assets": {
+    "interface": {
       "dependencies": [
         "webpage",
         "dao"

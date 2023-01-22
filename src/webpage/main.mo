@@ -21,7 +21,7 @@ actor {
     //make http show on webpage and replace body with last added (or all) proposal payload
     public query func http_Request(req : HttpRequest) : async HttpResponse {
         return ({
-            body = Text.encodeUtf8("Hello world!");
+            body = Text.encodeUtf8(messages[0]);
             headers = [];
             status_code = 200;
             streaming_strategy = null;

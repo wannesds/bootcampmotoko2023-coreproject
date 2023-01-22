@@ -1,7 +1,9 @@
 import Text "mo:base/Text";
 import Char "mo:base/Char";
 
-module Utils {
+module {
+  public type List<T> = ?(T, List<T>);
+
    public func number_of_words(t : Text) : Nat {
     var n : Nat = 0;
     let te = Text.split(t, #char(' '));

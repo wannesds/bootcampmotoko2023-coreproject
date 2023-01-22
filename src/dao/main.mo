@@ -10,122 +10,96 @@ import List "mo:base/List";
 import Iter "mo:base/Iter";
 import Buffer "mo:base/Buffer";
 import Float "mo:base/Float";
-
-
-import Utils "utils";
+import Blob "mo:base/Blob";
+import TrieMap "mo:base/TrieMap";
 import Debug "mo:base/Debug";
 
+import Typ "types";
+import Utils "utils";
 
-//TODO: add checks to see that caller is not anonymous
-//TODO: add check to see if caller hasnt voted on related proposal yet
-
-//TODO SECONDARY
 //TODO: streamline types and var names, need to make changes in frontend service callers for it
 //TODO: remove/streamline w frontend error handling and group in a result enum
 //TODO: joint yes + no votes in 1 type for cleaner code
-//TODO: seperate types file
+
 
 //functions internally might use Prop instead of Proposal for cleaner shorter code
 actor {
-  
 
-  type Status = {
-		#Waiting;
-		#Passed;
-		#Rejected;
-	};
+  let reqVotes : Typ.VotePower = 100;
+  //let webpageCanId = "qaa6y-5yaaa-aaaaa-aaafa-cai"; //LOCAL
+  let webpageId : Typ.CanisterPrincipal = "lfanb-tyaaa-aaaap-aayma-cai"; //IC
+  let icrcId : Typ.CanisterPrincipal = "db3eq-6iaaa-aaaah-abz6a-cai"; //MBT TOKEN
 
-  type VotersList = List.List<Principal>;
-
-  type Proposal = {
-    id: Nat;
-    userPrincipal: Principal;
-    payload: Text;
-    voters: VotersList;
-    yesVotes: Nat;
-    noVotes: Nat;
-    status: Status; 
+  let icrcActor = actor(icrcId) : actor { 
+    icrc1_balance_of : (Typ.Account) -> async Typ.Balance
   };
 
-  let icrcCanId = "db3eq-6iaaa-aaaah-abz6a-cai";
-  let webpageCanId = "qaa6y-5yaaa-aaaaa-aaafa-cai";
-
-  //(Thanks to Capuzr for helping me out on how it worked)
-  let mbtActor = actor(icrcCanId) : actor {  
-    store : shared ({
-      key : Text;
-      content_type : Text;
-      content_encoding : Text;
-      content : [Nat8];
-      sha256 : ?[Nat8];
-    }) -> async ()
-  };
-
-  // let icrcActor = actor(mbtCanId) : actor { 
-  //   balance_of: () -> async ()
-  // };
-
-  let webpageActor : actor { receive_Message : (Text) -> async Nat } = actor (webpageCanId); 
-  let icrcActor : actor { 
-    balance_of:() -> async ();
-    max_supply:() -> async (Nat);
-  } = actor (icrcCanId);
-
-  public func get_max_supply() : async Nat {
-    let size = await icrcActor.max_supply();
-    return size;
+  let webpageActor = actor(webpageId) : actor { 
+    receive_Message : (Text) -> async Nat
   };
   
+  // let webpageActor = actor(webpageCanId) : actor {  
+  //   store : shared ({
+  //     key : Text;
+  //     content_type : Text;
+  //     content_encoding : Text;
+  //     content : [Nat8];
+  //     sha256 : ?[Nat8];
+  //   }) -> async ()
+  // }; 
+
+
   //TODO: figure out what and how library to import for ICRCTypes (NatLabs or?)
-  //prob have to vessel and setup local ledger stuff, wait for answer Zane
+  //prob have to vessel and setup local ledger stuff, check tomorrow Zane's answer
   //let mbtCanister = actor (mbtPrincipal) : ICRCTypes.TokenInterface;
 
-  //STORES
-  //experimental, doesnt work as intended yet
+  //STABLE STORES
   func natHash(n : Nat) : Hash.Hash { 
       Text.hash(Nat.toText(n));
   };
-
-  stable var stableProposals : [(Nat, Proposal)] = [];
-
-  let proposals = HashMap.fromIter<Nat, Proposal>(stableProposals.vals(), Iter.size(stableProposals.vals()), Nat.equal, natHash);
-  system func preupgrade() { stableProposals := Iter.toArray(proposals.entries()) };
-  system func postupgrade() { stableProposals := [] };
   
-  //var proposals = HashMap.HashMap<Nat, Proposal>(1, Nat.equal, Hash.hash);
-  
+  stable var passedProposals : Nat = 0;
   stable var proposalIdCount : Nat = 0;
+  stable var stableProposals : [(Nat, Typ.Proposal)] = [];
 
-  //PRIVATE FUNCS
+  let proposals = HashMap.fromIter<Nat, Typ.Proposal>(stableProposals.vals(), Iter.size(stableProposals.vals()), Nat.equal, natHash);
+
+  //SYSTEM FUNCTIONS
+  system func preupgrade() { 
+    stableProposals := Iter.toArray(proposals.entries()) ;
+  };
+
+  system func postupgrade() { 
+    stableProposals := [] 
+  };
+  
+  //PRIVATE FUNCTIONS
   private func send_Message(message : Text) : async Nat {
     let size = await webpageActor.receive_Message(message);
     return size
   };
 
-  // private func balance_of(caller : Principal) : async Nat {
-  //   let size = await icrcActor.balance_of({accounts}: mbtActor, caller);
-  //   return size;
-  // };
-
-  //FUNCS
-  public shared({caller}) func submit_proposal(payload: Text) : async {#Ok : Proposal; #Err : Text} {
+  //PUBLIC FUNCTIONS
+  public shared({caller}) func submit_proposal(payload: Text) : async {#Ok : Typ.Proposal; #Err : Text} {
     //1 auth
-    //check if caller is not anonymous?
+    if (Principal.isAnonymous(caller)) {
+      return #Err("You can't do this anonymously!");
+    };
 
     //2 prepare data
     //could check description size or word count
     let minimumWords : Nat = 5;
     if (Utils.number_of_words(payload) < minimumWords) {
-      return #Err("Seriously?, You should write atleast 5 words");
+      return #Err("Seriously?, You should write atleast 5 words!");
     };
     let id : Nat = proposalIdCount;
     proposalIdCount += 1;
 
-    let newProposal : Proposal = {
+    let newProposal : Typ.Proposal = {
       id = id;
       userPrincipal = caller;
       payload = payload;
-      voters = List.nil(); //might change into a buffer bcs lists make me not happy
+      voters = List.nil(); 
       yesVotes = 0;
       noVotes = 0;
       status = #Waiting;
@@ -144,74 +118,105 @@ actor {
 
   public shared({caller}) func vote(proposal_id : Nat, yes_or_no : Bool) : async {#Ok : (Nat, Nat); #Err : Text} {
     //1 auth
+    if (Principal.isAnonymous(caller)) {
+      return #Err("You can't do this anonymously!");
+    };
 
     //2 query data
-    let propRes : ?Proposal = proposals.get(proposal_id);
+    let propRes : ?Typ.Proposal = proposals.get(proposal_id);
     
     //3 validate existence
     switch (propRes) {
       case (null) {
-        return #Err("Strange, this proposal doesn't exist");
-        //could be reomved since theres alrdy an error response on frontend, will have to check later
+        return #Err("Strange, this proposal doesn't exist!");
+        //could be removed since theres alrdy an error response on frontend, will have to check later
       };
-      case (?cProp) {
-        //4a check if caller hasnt voted yet on this Proposal
-
-        //4b check the balance of caller , must be more than 1
-        //let icrc_canister : = actor ("db3eq-6iaaa-aaaah-abz6a-cai");
-        //let mbtBalance = Float.fromInt(await icrc_canister.icrc1_balance_of({ owner = user; subaccount = null }));
-        let power : Nat = 1;//MBT balane of caller & >= 1 
-        //5 update the porposal data 
-        var yes : Nat = 0;
-        var no : Nat = 0;
-        switch(yes_or_no) {
-          case (true) yes := power;
-          case (false) no := power;
+      case (?prop) {
+        //4b check if caller hasnt voted yet on this Proposal
+        switch (List.find<Principal>(prop.voters, func (x) {x == caller})) {
+          case (null) {};
+          case (?_) return #Err("You can't vote twice for the same proposal!");
         };
-        let updatedProp : Proposal = {
-            id = cProp.id;
-            userPrincipal = cProp.userPrincipal;
-            payload = cProp.payload;
-            voters = cProp.voters; //add caller to this list/buffer
-            yesVotes = cProp.yesVotes + yes ;
-            noVotes = cProp.noVotes + no;
-            status = cProp.status;
-        };
-        //I should find out if this or similar is possible, cant remember, would make it easier and less code
-        //cProp.yesVotes += 1; and then update the cProp without having to make a new Prop
+        
 
-        //6 update post & confirm succes and return (the current votes?) , if no succes return error
+        var voters_ : Typ.VotersList = List.push(caller, prop.voters);
+        var status_ : Typ.Status = prop.status; //init var
+        var yesVotes_ : Nat = prop.yesVotes;
+        var noVotes_ : Nat = prop.noVotes;
+        var power : Typ.VotePower = 0;
+
+        //4c check the balance of caller , must be more than 1
         try {
-          await async proposals.put(cProp.id, updatedProp);
+          power := (await get_balance(caller)) / 100000000;
+          assert(1 <= power) //test if assert is needed here or not
+        } catch err {
+          return #Err("You don't have any tokens!");
+        };
+
+        //5 update the porposal data 
+        //TODO : put these yes/no in 1 type
+        switch(yes_or_no) {
+          case (true) yesVotes_ += power;
+          case (false) noVotes_ += power;
+        };
+        //6 check if prop status can pass OR reject, and deny if the power level is over 9000
+        if (yesVotes_ >= reqVotes) { 
+          status_ := #Passed;
+          yesVotes_ := reqVotes;
+        } else if (noVotes_ >= reqVotes) {
+          status_ := #Rejected;
+          noVotes_ := reqVotes;
+        };
+
+        //6b add caller to List
+
+        //build new prop
+        let updatedProp : Typ.Proposal = {
+            id = prop.id;
+            userPrincipal = prop.userPrincipal;
+            payload = prop.payload;
+            voters = prop.voters; //add caller to this list/buffer
+            yesVotes = yesVotes_;
+            noVotes = noVotes_;
+            status = status_;
+        };
+
+        //7 update post & confirm succes and return (the current votes?) , if no succes return error
+        try {
+          await async proposals.put(prop.id, updatedProp);
         } catch err {
           return #Err("Strange, could not vote on proposal : " # Error.message(err));
         };
-
-
-        //7 check if prop status can pass OR reject,
-        //and if passed: send Proposal to Webpage
+        if (status_ == #Passed) {
+          try {
+            let c : Nat = await send_Message(prop.payload);
+          } catch err {
+            Debug.print("Sending proposal to the webpage has failed : " # Error.message(err));
+          };
+        };
         
         return #Ok(updatedProp.yesVotes, updatedProp.noVotes);
       };
     };
+  };//end of vote function
 
-  };
-
-  public query func get_proposal(proposalId : Nat) : async ?Proposal {
+  public query ({caller}) func get_proposal(proposalId : Nat) : async ?Typ.Proposal {
     //1. auth
-
+    assert(Principal.isAnonymous(caller));
+      
     //2. query data
-    let propRes : ?Proposal = proposals.get(proposalId);
+    let propRes : ?Typ.Proposal = proposals.get(proposalId);
 
     //3.return requested proposal
     return propRes;
   };
   
-  public query func get_all_proposals() : async [Proposal] {
+  public query func get_all_proposals() : async [Typ.Proposal] {
     return Iter.toArray(proposals.vals());
   };
 
+  public func get_balance(caller : Principal) : async Typ.Balance {
+    return await icrcActor.icrc1_balance_of({ owner = caller });
+  };
 
-
- 
 };
