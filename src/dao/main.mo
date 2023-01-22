@@ -25,8 +25,8 @@ import Utils "utils";
 //functions internally might use Prop instead of Proposal for cleaner shorter code
 actor {
 
-  let reqVotes : Typ.VotePower = 100;
-  //let webpageId = "qaa6y-5yaaa-aaaaa-aaafa-cai"; //LOCAL
+  let reqVotes : Typ.VotePower = 100 * 100000000;
+  //webpageId = "qaa6y-5yaaa-aaaaa-aaafa-cai"; //LOCAL
   let webpageId : Typ.CanisterPrincipal = "lfanb-tyaaa-aaaap-aayma-cai"; //IC
   let icrcId : Typ.CanisterPrincipal = "db3eq-6iaaa-aaaah-abz6a-cai"; //MBT TOKEN
 
@@ -146,8 +146,8 @@ actor {
 
         //4c check the balance of caller , must be more than 1
         try {
-          power := (await get_balance(caller)) / 100000000;
-          assert(1 <= power); //test if assert is needed here or not
+          power := await get_balance(caller);
+          //assert(1 <= power); //test if assert is needed here or not
         } catch err {
           return #Err("You don't have any tokens!");
         };
@@ -213,7 +213,7 @@ actor {
     return Iter.toArray(proposals.vals());
   };
 
-  public shared func get_balance(caller : Principal) : async Typ.Balance {
+  public func get_balance(caller : Principal) : async Typ.Balance {
     return await icrcActor.icrc1_balance_of({ owner = caller });
   };
 

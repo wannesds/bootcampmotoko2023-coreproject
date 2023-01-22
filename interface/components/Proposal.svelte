@@ -3,14 +3,16 @@
 </script>
 
 <div class="post-preview">
-  <h2>{post.payload}</h2>
-  <!-- <p>{post[0].userPrincipal.toString()}</p>
-  <p>Change website text to: {post[0].payload}</p> -->
+  <h2>{post.id}</h2>
+  <p>{post.userPrincipal.toString()}</p>
+  <p>Change website text to: {post.payload}</p>
   <!-- <p>
-    Yes: {(post[0].votes[0] / BigInt(100000000)).toString()}, No: {(
-      post[0].votes[1] / BigInt(100000000)
+    Yes: {(post.yesVotes / BigInt(100000000)).toString()}, No: {(
+      post.noVotes / BigInt(100000000)
     ).toString()}
-  </p> -->
+  </p>
+  
+  <p>Status: {post.status}</p> -->
 </div>
 
 <style>
