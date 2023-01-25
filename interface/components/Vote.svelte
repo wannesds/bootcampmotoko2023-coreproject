@@ -29,7 +29,7 @@
     }
     let res = await dao.get_proposal(BigInt(thisid))
     if (res.length !== 0) {
-      return res[0]
+      return res[0] //TODO : 0 might have to be removed for bug, check
     } else {
       throw new Error(
         "Could not find this proposal, make sure you typed in the right ID",

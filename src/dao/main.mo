@@ -25,7 +25,7 @@ import Utils "utils";
 //functions internally might use Prop instead of Proposal for cleaner shorter code
 actor {
 
-  let reqVotes : Typ.VotePower = 100 * 100000000;
+  var reqVotes : Nat = 100 * 100000000;
   //webpageId = "qaa6y-5yaaa-aaaaa-aaafa-cai"; //LOCAL
   let webpageId : Typ.CanisterPrincipal = "lfanb-tyaaa-aaaap-aayma-cai"; //IC
   let icrcId : Typ.CanisterPrincipal = "db3eq-6iaaa-aaaah-abz6a-cai"; //MBT TOKEN
@@ -142,14 +142,19 @@ actor {
         var status_ : Typ.Status = prop.status; //init var
         var yesVotes_ : Nat = prop.yesVotes;
         var noVotes_ : Nat = prop.noVotes;
-        var power : Typ.VotePower = 0;
+        var power : Nat = 0;
 
         //4c check the balance of caller , must be more than 1
+        
         try {
           power := await get_balance(caller);
           //assert(1 <= power); //test if assert is needed here or not
         } catch err {
           return #Err("You don't have any tokens!");
+        };
+        //test
+        if (power <= 1) {
+          return #Err("You have less than 1 power, something is wrong!");
         };
 
         //5 update the porposal data 

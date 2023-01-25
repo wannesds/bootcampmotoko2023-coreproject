@@ -8,7 +8,6 @@ module T {
   public type Account = { owner : Principal };
   public type CanisterPrincipal = Text;
   public type VotersList = List.List<Principal>;
-  public type VotePower =  Nat;
 
   public type Status = {
     #Waiting;
@@ -21,8 +20,8 @@ module T {
     userPrincipal: Principal;
     payload: Text;
     voters: VotersList;
-    yesVotes: VotePower;
-    noVotes: VotePower;
+    yesVotes: Nat;
+    noVotes: Nat;
     status: Status; 
   };
 }
